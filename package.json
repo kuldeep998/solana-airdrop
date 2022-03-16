@@ -21,6 +21,7 @@
     "react-data-table-component": "^7.4.7",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
+    "react-toastify": "^8.2.0",
     "solana-wallets-vue": "^0.3.2",
     "styled-components": "^5.3.3",
     "web-vitals": "^2.1.4",

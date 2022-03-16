@@ -3,7 +3,11 @@ import DataTable from 'react-data-table-component';
 import * as XLSX from 'xlsx';
 import $ from 'jquery';
 import { Box, Button, TextField, Typography } from '@mui/material';
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { Program, Provider } from '@project-serum/anchor';
+toast.configure()
 const {
   Connection,
   PublicKey,
@@ -12,10 +16,8 @@ const {
   LAMPORTS_PER_SOL,
   Transaction,
   Account,
+  SystemProgram
 } = require("@solana/web3.js");
-
-
-
 
 const GenerateSol = () => {
 
@@ -25,72 +27,43 @@ const GenerateSol = () => {
   let [afterWallet, setAfterWallet] = useState();
   let [afterBalance, setAfterBalance] = useState();
 
+
+
+  const wallet = useWallet();
+  const { publicKey } = useWallet();
   useEffect(() => {
-    // console.log("constructor working");
-  }, []);
-
-  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-  console.log(connection);
-  console.log(connection.getAccountInfo.PublicKey);
-
-
-  const getWalletBalance = async (walletAddress) => {
-    try {
-      const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-      console.log("fetch public key " + walletAddress);
-      const walletBalance = await connection.getBalance(
-        new PublicKey(walletAddress)
-      );
-      console.log(`   Wallet balance: ${parseInt(walletBalance) / LAMPORTS_PER_SOL}SOL`);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const airDropSol = async (walletAddress, userLamport) => {
-    try {
-      const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
-      console.log(connection.getAccountInfo.PublicKey);
-      console.log(connection.wallet.PublicKey);
-      console.log(`-- Airdropping ` + userLamport + " to " + walletAddress + " wallet address");
-      const fromAirDropSignature = await connection.requestAirdrop(
-        new PublicKey(walletAddress),
-        userLamport * LAMPORTS_PER_SOL
-      );
-      await connection.confirmTransaction(fromAirDropSignature);
-      console.log("transaction completed");
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const driverFunction = async () => {
-
-    var listLength = parseInt(data.length);
-    if (listLength === 0 || listLength === null) {
-      alert("Please enter csv file");
-      return null;
-    }
-
-
-    var userLamport = $("#lamportvalue").val();
-    console.log(userLamport);
-    if (userLamport === '0' || userLamport === null) {
-      alert("Please enter lamports");
-      return null;
-    }
-
-
-    for (var i = 0; i < data.length; i++) {
-      console.log(data[i]);
-
-      if (data[i].wallet !== null) {
-        //  await getWalletBalance(data[i].wallet);
-        await airDropSol(data[i].wallet, userLamport);
-        // await getWalletBalance(data[i].wallet);
+    console.log(wallet);
+    if (wallet?.publicKey) 
+    {
+      let user = {
+        walletAddress: wallet.publicKey.toString()
       }
+      var x = document.getElementById("maincode");
+      if (x.style.display === "none") {
+        x.style.display = "block";
+      } 
+
     }
+    else
+    {
+
+      var x = document.getElementById("maincode");
+      if (x.style.display === "block") {
+        x.style.display = "none";
+      } 
+
+    }
+  }, [wallet.publicKey])
+
+
+  const notify = () => {
+    toast('successfully airdroped')
   }
+  const web3 = require("@solana/web3.js");
+  const connection = new web3.Connection(
+    web3.clusterApiUrl('devnet'),
+    'confirmed',
+  );
 
 
   //  csv upload 
@@ -159,85 +132,108 @@ const GenerateSol = () => {
     reader.readAsBinaryString(file);
   }
 
+
+  const driverFunction = async () => {
+
+    var listLength = parseInt(data.length);
+    if (listLength === 0 || listLength === null) {
+      alert("Please enter csv file");
+      return null;
+    }
+
+
+    var userLamport = $("#lamportvalue").val();
+    console.log(userLamport);
+    if (userLamport === '0' || userLamport === null) {
+      alert("Please enter lamports");
+      return null;
+    }
+
+
+    for (var i = 0; i < data.length; i++) {
+      console.log(data[i]);
+      if (data[i].wallet !== null) {
+        await transfer(data[i].wallet, userLamport);
+      }
+    }
+  }
+
+
+  /* ashish code */
+  const transfer = async (userWalletAddress, userlamports) => {
+    if (!wallet) return;
+
+    try {
+      let opts = {
+        preflightCommitment: "recent",
+        commitment: "recent",
+      };
+      const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+      let provider = new Provider(connection, wallet, opts);
+      const Ix = web3.SystemProgram.transfer({
+        fromPubkey: wallet.publicKey,
+        toPubkey: new PublicKey(userWalletAddress),
+        lamports: userlamports * LAMPORTS_PER_SOL,
+      });
+      const transaction = new Transaction().add(Ix);
+      const req = { tx: transaction, signers: [] };
+      const requestArray = [req];
+      const signature = await provider.sendAll(requestArray, {
+        commitment: "recent",
+        preflightCommitment: "recent",
+        skipPreflight: true,
+      });
+      console.log("signatiure ", signature);
+      notify();
+    } catch (error) {
+      console.log("Transaction failed, please check your inputs and try again");
+      console.log(error);
+    }
+  };
+
+
+
   return (
     <>
-
-      <Box sx={{ marginTop: "60px" }}>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography color="primary">Import Users</Typography>
-        </Box>
-        <Box sx={{ marginTop: "30px" }}>
-          <Typography sx={{ fontSize: "14px", color: "gray" }}>If you have a large number of users, you can upload them using a CSV file.</Typography>
-        </Box>
-        <Box>
-          <Box sx={{ margin: "30px auto" }}>
-            <Typography>Step 1 - Download a CSV template</Typography>
-            <Box sx={{ marginTop: "20px", cursor: 'pointer' }}>
-              <label for="download-btn" style={{ border: "1px solid gray", padding: "10px 40px", borderRadius: "2px" }}>Download CSV Template</label>
-              <input type="file" id="download-btn" hidden />
-            </Box>
+      <div id="maincode"  style={{display:"none"}}>
+        <Box sx={{ marginTop: "60px" }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography color="primary">Import Users</Typography>
           </Box>
-          <Box sx={{ margin: "30px auto" }}>
-            <Typography>Step 2 - Upload the CSV template</Typography>
-            <Box sx={{ marginTop: "20px", cursor: 'pointer' }}>
-              <label for="upload-btn" style={{ border: "1px solid gray", padding: "10px 40px", borderRadius: "2px" }}>Upload File</label>
-              <input type="file" id="upload-btn" accept=".csv,.xlsx,.xls"
-                onChange={handleFileUpload} hidden />
-            </Box>
+          <Box sx={{ marginTop: "30px" }}>
+            <Typography sx={{ fontSize: "14px", color: "gray" }}>If you have a large number of users, you can upload them using a CSV file.</Typography>
           </Box>
           <Box>
-            <DataTable
-              pagination
-              highlightOnHover
-              columns={columns}
-              data={data}
-            />
-          </Box>
-          <Box sx={{ margin: "30px auto" }}>
-            <Typography>Step 3 - Solana Air Drop Block</Typography>
-            <Box sx={{ marginTop: "8px" }}>
-              <TextField variant='outlined' placeholder="Enter Lamport" defaultValue="0" id="lamportvalue" type="number" />
+            <Box sx={{ margin: "30px auto" }}>
+              <Typography>Step 1 - Upload the CSV template</Typography>
+              <Box sx={{ marginTop: "20px", cursor: 'pointer' }}>
+                <label htmlFor="upload-btn" style={{ border: "1px solid gray", padding: "10px 40px", borderRadius: "2px" }}>Upload File</label>
+                <input type="file" id="upload-btn" accept=".csv,.xlsx,.xls"
+                  onChange={handleFileUpload} hidden />
+              </Box>
+            </Box>
+            <Box>
+              <DataTable
+                pagination
+                highlightOnHover
+                columns={columns}
+                data={data}
+              />
+            </Box>
+            <Box sx={{ margin: "30px auto" }}>
+              <Typography>Step 2 - Enter Lamport Value</Typography>
+              <Box sx={{ marginTop: "8px" }}>
+                <TextField variant='outlined' placeholder="Enter Lamport" defaultValue="0" id="lamportvalue" type="number" />
+              </Box>
+            </Box>
+            <Box sx={{ textAlign: 'center', marginTop: "40px" }}>
+              <Button color="secondary" onClick={(e) => { driverFunction() }}>Start Air Drop Process</Button>
+
+              {/*   <Button color="secondary" onClick={(e) => { transfer() }}>Ashish Air Drop Process</Button> */}
             </Box>
           </Box>
-          <Box sx={{ textAlign: 'center', marginTop: "40px" }}>
-            <Button color="secondary" onClick={(e) => { driverFunction() }}>Start Air Drop Process</Button>
-          </Box>
         </Box>
-      </Box>
-
-
-
-
-
-
-
-
-
-
-
-
-
-      {/* <h3>Read CSV file in React</h3>
-      <input
-        type="file"
-        accept=".csv,.xlsx,.xls"
-        onChange={handleFileUpload}
-      />
-      <DataTable
-        pagination
-        highlightOnHover
-        columns={columns}
-        data={data}
-      />
-      <hr />
-      <h3>Solana Air Drop Block</h3>
-      <input type="number" placeholder="Enter Lamport" defaultValue="0" id="lamportvalue" /><br /><br /><br />
-
-      <button onClick={(e) => { driverFunction() }}>Start Air Drop Process</button>
-
-      <hr /> */}
-
-
+      </div>
     </>);
 }
 
