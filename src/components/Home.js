@@ -15,7 +15,7 @@ function Home() {
             let user = {
                 walletAddress: wallet.publicKey.toString()
             }
-            console.log(user)
+            //console.log(user)
         }
     }, [wallet.publicKey])
     return (
