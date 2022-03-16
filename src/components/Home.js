@@ -19,15 +19,17 @@ function Home() {
         }
     }, [wallet.publicKey])
     return (
-        <Box display="flex" justifyContent="center">
-            <Paper sx={{ width: "40%", padding: "30px", marginTop: "30px" }}>
+        <Box display="flex" justifyContent="center" alignItems="center">
+            <Paper sx={{ width: "40%", padding: "30px", marginTop: "40px" }}>
                 <Box display="flex" justifyContent="center">
                     {/* <Button color="primary" variant='outlined'>Connect Wallet</Button> */}
-                    <WalletMultiButton style={{ border: "1px solid rgba(0,0,0,0.9)", background: 'transparent', color: "rgba(0,0,0,0.9)", fontWeight: 'lighter' }}>Connect Wallet</WalletMultiButton>
+                    <WalletMultiButton style={{ border: "1px solid rgba(0,0,0,0.9)", background: 'transparent', color: "rgba(0,0,0,0.9)", fontWeight: 'lighter' }} />
                 </Box>
-                <Box>
-                    <GenerateSol />
-                </Box>
+                {wallet.connected && (
+                    <Box>
+                        <GenerateSol />
+                    </Box>
+                )}
             </Paper>
         </Box>
     )
