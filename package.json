@@ -6,6 +6,7 @@
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
     "@mui/material": "^5.5.1",
+    "@mui/styles": "^5.5.1",
     "@project-serum/anchor": "^0.20.1",
     "@project-serum/serum": "^0.13.61",
     "@solana/wallet-adapter-base": "^0.6.0",

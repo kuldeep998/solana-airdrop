@@ -5,8 +5,22 @@ import {
     WalletMultiButton
 } from '@solana/wallet-adapter-react-ui';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { makeStyles } from '@mui/styles'
+
+const useStyles = makeStyles(theme => ({
+    root: {
+        height: "90vh",
+    },
+    paperConnected: {
+        marginTop: "40px",
+    },
+    paperNotConnected: {
+        marginTop: 0
+    }
+}))
 
 function Home() {
+    const classes = useStyles();
     const wallet = useWallet();
     const { connection } = useConnection();
     const { publicKey } = useWallet();
@@ -19,8 +33,8 @@ function Home() {
         }
     }, [wallet.publicKey])
     return (
-        <Box display="flex" justifyContent="center" alignItems="center">
-            <Paper sx={{ width: "40%", padding: "30px", marginTop: "40px" }}>
+        <Box display="flex" justifyContent="center" alignItems="center" className={wallet.connected ? null : classes.root}>
+            <Paper sx={{ width: "40%", padding: "30px" }} className={wallet.connected ? classes.paperConnected : classes.paperNotConnected}>
                 <Box display="flex" justifyContent="center">
                     {/* <Button color="primary" variant='outlined'>Connect Wallet</Button> */}
                     <WalletMultiButton style={{ border: "1px solid rgba(0,0,0,0.9)", background: 'transparent', color: "rgba(0,0,0,0.9)", fontWeight: 'lighter' }} />
