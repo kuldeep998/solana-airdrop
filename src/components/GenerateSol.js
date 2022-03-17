@@ -29,28 +29,28 @@ const GenerateSol = () => {
 
 
 
+  let requestArray = new Array();
+
   const wallet = useWallet();
   const { publicKey } = useWallet();
   useEffect(() => {
     console.log(wallet);
-    if (wallet?.publicKey) 
-    {
+    if (wallet?.publicKey) {
       let user = {
         walletAddress: wallet.publicKey.toString()
       }
       var x = document.getElementById("maincode");
       if (x.style.display === "none") {
         x.style.display = "block";
-      } 
+      }
 
     }
-    else
-    {
+    else {
 
       var x = document.getElementById("maincode");
       if (x.style.display === "block") {
         x.style.display = "none";
-      } 
+      }
 
     }
   }, [wallet.publicKey])
@@ -135,9 +135,14 @@ const GenerateSol = () => {
 
   const driverFunction = async () => {
 
+    var spinner = $('#loader');
+		spinner.show();
+
     var listLength = parseInt(data.length);
     if (listLength === 0 || listLength === null) {
-      alert("Please enter csv file");
+      
+      spinner.hide();
+      toast('Please upload csv file');
       return null;
     }
 
@@ -145,7 +150,8 @@ const GenerateSol = () => {
     var userLamport = $("#lamportvalue").val();
     console.log(userLamport);
     if (userLamport === '0' || userLamport === null) {
-      alert("Please enter lamports");
+      spinner.hide();
+      toast('Please enter lamports');
       return null;
     }
 
@@ -156,11 +162,45 @@ const GenerateSol = () => {
         await transfer(data[i].wallet, userLamport);
       }
     }
+
+
+    if (requestArray.length === 0) {
+      spinner.hide();
+      toast('Transactions not exists')
+      
+      return null;
+    }
+    else {
+      try {
+        let opts = {
+          preflightCommitment: "recent",
+          commitment: "recent",
+        };
+        const connection = new Connection("https://api.devnet.solana.com", "confirmed");
+        let provider = new Provider(connection, wallet, opts);
+        const signature = await provider.sendAll(requestArray, {
+          commitment: "recent",
+          preflightCommitment: "recent",
+          skipPreflight: true,
+        });
+        spinner.hide();
+        console.log("signatiure ", signature);
+        toast('Transaction successfully');
+      } catch (error) {
+        spinner.hide();
+        console.log("Transaction failed, please check your inputs and try again");
+        console.log(error);
+      }
+    }
+
+
   }
 
 
   /* ashish code */
   const transfer = async (userWalletAddress, userlamports) => {
+    var spinner = $('#loader');
+		
     if (!wallet) return;
 
     try {
@@ -177,25 +217,19 @@ const GenerateSol = () => {
       });
       const transaction = new Transaction().add(Ix);
       const req = { tx: transaction, signers: [] };
-      const requestArray = [req];
-      const signature = await provider.sendAll(requestArray, {
-        commitment: "recent",
-        preflightCommitment: "recent",
-        skipPreflight: true,
-      });
-      console.log("signatiure ", signature);
-      notify();
+      requestArray.push(req);
     } catch (error) {
+      spinner.hide();
       console.log("Transaction failed, please check your inputs and try again");
       console.log(error);
     }
   };
 
 
-
   return (
     <>
-      <div id="maincode"  style={{display:"none"}}>
+      <div id="loader"></div>
+      <div id="maincode" style={{ display: "none" }}>
         <Box sx={{ marginTop: "60px" }}>
           <Box sx={{ textAlign: 'center' }}>
             <Typography color="primary">Import Users</Typography>
